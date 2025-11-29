@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Birthday Quest</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ffe6f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    #game-container {
+      width: 360px;
+      min-height: 600px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    #message-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      padding: 20px;
+      background: #ffccdd;
+      border-radius: 15px;
+      text-align: center;
+      display: none;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      animation: pop 0.4s ease;
+    }
+    #ok-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      border: none;
+      background: #ff6699;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    @keyframes pop {
+      0% {transform: translate(-50%, -50%) scale(0.5);} 100% {transform: translate(-50%, -50%) scale(1);}
+    }
+    #start-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border: none;
+      background: #ff6699;
+      color: white;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 100;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      position: relative;
+      z-index: 1;
+    }
+    #instructions {
+      position: absolute;
+      top: 5px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 5px;
+      font-size: 16px;
+      color: #ff6699;
+      pointer-events: none;
+      z-index: 50;
+    }
+    #author {
+      position: absolute;
+      top: 60px; /* below instructions */
+      width: 100%;
+      text-align: center;
+      font-size: 18px; /* bigger */
+      font-weight: bold;
+      color: #ff6699;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="instructions">Catch the shiny stars to get fun birthday messages just for you! 🌟</div>
+    <div id="author">made by neya</div>
+    <button id="start-btn">Start the Birthday Quest 🎁</button>
+    <div id="message-card"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('start-btn');
+    const messageCard = document.getElementById('message-card');
+
+    canvas.width = 360;
+    canvas.height = 600;
+
+    let player = { x: 160, y: 500, size: 20 };
+    let stars = [];
+    let collected = 0;
+    let gamePaused = false;
+
+    const messages = [
+      "🌟 You're amazing! Keep being fun and kind!",
+      "🎈 You make everyone smile just by being you!",
+      "🍰 Hope your birthday is full of cake and laughter!",
+      "🎉 You're awesome and today is all about YOU!",
+      "💖 Happy Birthday! Keep shining bright!"
+    ];
+
+    function createStars() {
+      for (let i = 0; i < 15; i++) {
+        stars.push({ x: Math.random() * 340 + 10, y: Math.random() * -600, size: 10, speed: Math.random() * 2 + 1 });
+      }
+    }
+
+    function drawPlayer() {
+      ctx.fillStyle = '#ff6699';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawStars() {
+      ctx.fillStyle = '#ffd1e8';
+      stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function updateStars() {
+      if (gamePaused) return;
+      stars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > 600) { s.y = -20; s.x = Math.random() * 340 + 10; }
+        let dx = s.x - player.x;
+        let dy = s.y - player.y;
+        if (Math.sqrt(dx*dx + dy*dy) < player.size + s.size) {
+          s.y = -20;
+          s.x = Math.random() * 340 + 10;
+          showMessage();
+        }
+      });
+    }
+
+    function showMessage() {
+      if (collected < messages.length) {
+        gamePaused = true;
+        messageCard.innerHTML = messages[collected] + '<br><button id="ok-btn">OK</button>';
+        messageCard.style.display = 'block';
+        collected++;
+        document.getElementById('ok-btn').addEventListener('click', () => {
+          messageCard.style.display = 'none';
+          gamePaused = false;
+        });
+      } else {
+        gamePaused = true;
+        messageCard.innerHTML = "🎉 You've finished the Birthday Quest! Hope your day is full of fun and smiles!, from neya, sorry bestie if the game is basic, I love you ♥️♥️";
+        messageCard.style.display = 'block';
+      }
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, 360, 600);
+      drawPlayer();
+      drawStars();
+      updateStars();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      player.x = e.clientX - rect.left;
+    });
+
+    document.addEventListener('touchmove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      player.x = touch.clientX - rect.left;
+    }, { passive: true });
+
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      createStars();
+      gameLoop();
+    });
+  </script>
+</body>
+</html>
